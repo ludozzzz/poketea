@@ -145,6 +145,7 @@ export default function App(){
   const [accTab,setAccTab]=useState("orders");
   const [detailProduct,setDetailProduct]=useState(null);const [selOpts,setSelOpts]=useState({});
   const [welcomeEdit,setWelcomeEdit]=useState(null);
+  const [adminLoginModal,setAdminLoginModal]=useState(false);const [adminEmail,setAdminEmail]=useState("");const [adminPw,setAdminPw]=useState("");const [adminErr,setAdminErr]=useState("");
 
   const isOpen=checkOpen();const wlc=cfg.welcome||{title:"Poké & Tea",subtitle:"",badge:""};
   const cnt=cart.reduce((s,i)=>s+i.qty,0);const cartTotal=cart.reduce((s,i)=>s+i.unitPrice*i.qty,0);
@@ -222,7 +223,7 @@ export default function App(){
       {groups().map(g=>(<section key={g.cat.id} className="ms"><div className="shd"><span className="se">{g.cat.emoji}</span><h2 className="stt">{g.cat.name}</h2><span className="sct">{g.products.length}</span></div>
         <div className="pg">{g.products.map(p=>(<div key={p.id} className={"pc "+(p.available===false?"off":"")}>{p.popular&&<span className="pop">Populaire</span>}{p.image?<img style={{width:"100%",height:150,objectFit:"cover",borderRadius:10,marginBottom:10,background:"var(--bl)"}} src={p.image} alt={p.name}/>:null}<div className="pc-body"><div className="pn">{p.name}</div><div className="pde">{p.description}</div>{hasOptionGroups(p)&&<div style={{fontSize:10.5,color:"var(--pu)",fontWeight:500,marginBottom:4}}>Options disponibles</div>}<div className="pfo"><span className="pp">{p.price.toFixed(2)}<small>E</small></span><button className="addb" onClick={()=>handleAdd(p)}>+</button></div></div></div>))}</div>
       </section>))}
-      <footer className="ftr"><div className="ftrb">Poké Tea</div><div className="ftri">17 Rue Cornillon, 77100 Meaux - 01 60 25 25 63</div><div className="ftrc"><span>2026 Poké Tea</span>{isAdmin&&<span style={{cursor:"pointer",marginLeft:8}} onClick={()=>{setView("admin");setAdminTab("dashboard");}}>⚙ Admin</span>}</div></footer>
+      <footer className="ftr"><div className="ftrb">Poké Tea</div><div className="ftri">17 Rue Cornillon, 77100 Meaux - 01 60 25 25 63</div><div className="ftrc"><span>2026 Poké Tea</span> <span style={{cursor:"pointer",userSelect:"none"}} onClick={()=>{if(view==="admin")return;if(isAdmin){setView("admin");setAdminTab("dashboard");}else{setAdminLoginModal(true);setAdminErr("");}}}>.</span></div></footer>
     </>)}
 
     {/* ACCOUNT */}
@@ -283,7 +284,7 @@ export default function App(){
       <div className="tbr" onClick={()=>{setView("user");setPage("menu");}}><div className="tblogo">🍣</div><div><div className="tbn" style={{color:"white"}}>Poké Tea</div><span style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:8,background:"rgba(232,93,58,.2)",color:"var(--ac)"}}>ADMIN</span></div></div>
       <div className="tnv">
         <button className="tlk" style={{color:"rgba(255,255,255,.6)"}} onClick={()=>{setView("user");setPage("menu");}}><span>👁</span><span className="lbl">Voir le site</span></button><div className="tsp" style={{background:"rgba(255,255,255,.15)"}}/>
-        <button className="tlk" style={{color:"rgba(255,255,255,.6)"}} onClick={()=>{setView("user");setPage("menu");}}><span>🚪</span><span className="lbl">Retour</span></button>
+        <button className="tlk" style={{color:"rgba(255,255,255,.6)"}} onClick={()=>{logout();setView("user");setPage("menu");toast("OK","Deconnecte");}}><span>🚪</span><span className="lbl">Déconnexion</span></button>
       </div>
     </div>
     <div className="alay"><aside className="asid"><div className="asit">Administration</div>
@@ -378,6 +379,17 @@ export default function App(){
         </div>
       </div>)}
     </main></div></>)}
+
+    {/* ADMIN LOGIN MODAL */}
+    {adminLoginModal&&<div className="ov" onClick={()=>setAdminLoginModal(false)}><div className="md" onClick={e=>e.stopPropagation()} style={{maxWidth:380,textAlign:"center"}}>
+      <div style={{fontSize:42,marginBottom:10}}>🔐</div>
+      <div style={{fontFamily:"var(--fd)",fontSize:20,fontWeight:700,marginBottom:6}}>Espace Administration</div>
+      <p style={{fontSize:12.5,color:"var(--t2)",marginBottom:20}}>Connectez-vous pour accéder au panneau</p>
+      {adminErr&&<div style={{background:"var(--rds)",color:"var(--rd)",padding:"8px 12px",borderRadius:"var(--rs)",fontSize:12,fontWeight:500,marginBottom:14}}>{adminErr}</div>}
+      <div className="fg"><label className="fl">Email</label><input className="fi" type="email" value={adminEmail} onChange={e=>setAdminEmail(e.target.value)} placeholder="admin@poketea.fr"/></div>
+      <div className="fg"><label className="fl">Mot de passe</label><input className="fi" type="password" value={adminPw} onChange={e=>setAdminPw(e.target.value)} placeholder="Mot de passe" onKeyDown={async e=>{if(e.key==="Enter"){try{await login(adminEmail,adminPw);setAdminLoginModal(false);setAdminEmail("");setAdminPw("");setAdminErr("");setView("admin");setAdminTab("dashboard");toast("OK","Bienvenue admin !");}catch{setAdminErr("Email ou mot de passe incorrect");}}}}/></div>
+      <button className="pbtn" style={{width:"100%",padding:12}} onClick={async()=>{try{await login(adminEmail,adminPw);setAdminLoginModal(false);setAdminEmail("");setAdminPw("");setAdminErr("");setView("admin");setAdminTab("dashboard");toast("OK","Bienvenue admin !");}catch{setAdminErr("Email ou mot de passe incorrect");}}}>Connexion Admin</button>
+    </div></div>}
 
     {/* MODE MODAL */}
     {modeModal&&<div className="ov" onClick={()=>setModeModal(false)}><div className="md" onClick={e=>e.stopPropagation()} style={{maxWidth:440}}>
