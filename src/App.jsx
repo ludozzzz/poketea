@@ -16,7 +16,6 @@ const CATEGORIES = [
 const MODES = [
   {id:"emporter",label:"A emporter",sub:"Commandez et récupérez sur place",icon:"🥡",color:"#e85d3a"},
   {id:"surplace",label:"Sur place",sub:"Mangez au restaurant",icon:"🍽",color:"#16a34a"},
-  {id:"reserver",label:"Réserver + Précommander",sub:"Réservez une table et précommandez",icon:"📅",color:"#7c3aed"},
 ];
 const STATUSES = ["nouvelle","en préparation","prête","récupérée","annulée"];
 const RULES = [{i:"🛒",t:"1 euro dépensé = 1 point gagné"},{i:"🎁",t:"100 pts = 5 euros de réduction"},{i:"🎂",t:"Double points le jour de votre anniversaire"},{i:"⭐",t:"Offres exclusives pour les membres"}];
@@ -106,13 +105,14 @@ const CSS = `
 @media(max-width:380px){.pc .pimg{width:75px;height:75px;min-width:75px;}.hero{padding:22px 12px 20px;}.hti{font-size:24px;}.accs{grid-template-columns:repeat(3,1fr);}}
 `;
 
-function CheckoutForm({cart,orderMode,user,profile,cartTotal,waitTime,onClose,onSubmit,onSignup}){
+function CheckoutForm({cart,orderMode,user,profile,cartTotal,waitTime,isOpenNow,onClose,onSubmit,onSignup}){
   const [f,sF]=useState({name:profile?.name||"",phone:profile?.phone||"",notes:""});
   const md=MODES.find(m=>m.id===orderMode);
   return(<div className="ov" onClick={onClose}><div className="md" onClick={e=>e.stopPropagation()}>
     <h2 className="mt">Finaliser la commande</h2>
     {md&&<div className="cmtag" style={{margin:"0 0 14px"}}><span>{md.icon}</span>{md.label}</div>}
     {waitTime>0&&<div style={{background:"var(--ys)",color:"var(--yl)",padding:"8px 12px",borderRadius:"var(--rs)",fontSize:12,fontWeight:600,marginBottom:14,display:"flex",alignItems:"center",gap:6}}>Temps d attente estime : ~{waitTime} min</div>}
+    {!isOpenNow&&<div style={{background:"var(--rds)",color:"var(--rd)",padding:"8px 12px",borderRadius:"var(--rs)",fontSize:12,fontWeight:600,marginBottom:14}}>Restaurant fermé — commande disponible 15 min après la prochaine ouverture</div>}
     {profile&&<div style={{background:"var(--gs)",color:"var(--gr)",padding:"5px 10px",borderRadius:"var(--rs)",fontSize:11,fontWeight:500,marginBottom:14,display:"inline-flex",alignItems:"center",gap:5}}>Connecte: {profile.name}</div>}
     <div className="fg"><label className="fl">Nom *</label><input className="fi" value={f.name} onChange={e=>sF({...f,name:e.target.value})} placeholder="Votre nom"/></div>
     <div className="fg"><label className="fl">Telephone *</label><input className="fi" value={f.phone} onChange={e=>sF({...f,phone:e.target.value})} placeholder="06..."/></div>
@@ -180,7 +180,6 @@ export default function App(){
         <button className={"tlk "+(view==="user"&&page==="menu"?"a":"")} onClick={()=>{setView("user");setPage("menu");}}><span>🍽</span><span className="lbl">Menu</span></button>
         <span style={{fontSize:12,color:"var(--t2)",display:"flex",alignItems:"center",gap:3,padding:"0 6px",whiteSpace:"nowrap"}}>📞 <span className="lbl">01 60 25 25 63</span></span><div className="tsp"/>
         <button className={"tlk "+(page==="loyalty"||page==="account"?"a":"")} onClick={()=>{setView("user");setPage(user?"account":"loyalty");if(user)setAccTab("loyalty");}}><span>⭐</span><span className="lbl">Fidélité</span></button><div className="tsp"/>
-        <button className={"tlk "+(page==="reservation"?"a":"")} onClick={()=>{setView("user");setPage("reservation");}}><span>📅</span><span className="lbl">Réservation</span></button><div className="tsp"/>
         {view==="user"&&<button className="tcart" onClick={()=>setCartOpen(true)}>🛒 <span className="lbl">Panier</span>{cnt>0&&<span className="tcb">{cnt}</span>}</button>}<div className="tsp"/>
         {user?(<button className="ub" onClick={()=>{setView("user");setPage("account");setAccTab("orders");}}><div className="uav">{(profile?.name||"U")[0].toUpperCase()}</div><span className="lbl">{(profile?.name||"").split(" ")[0]}</span></button>
         ):(<button className="ub" onClick={()=>{setAuthModal(true);setAuthTab("login");setAuthErr("");}}><span>👤</span><span className="lbl">Connexion</span></button>)}
@@ -211,7 +210,11 @@ export default function App(){
         {isOpen?(<>
           <button className="hbt" onClick={()=>setModeModal(true)}>🛒 Commander maintenant</button>
           {cfg.waitTime>0&&<p style={{fontSize:12,color:"var(--t2)",marginTop:10}}>Temps d attente : ~{cfg.waitTime} min</p>}
-        </>):(<div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"10px 20px",borderRadius:"var(--rs)",background:"var(--rds)",color:"var(--rd)",fontSize:13,fontWeight:600}}>Fermé actuellement</div>)}
+        </>):(<>
+          <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"10px 20px",borderRadius:"var(--rs)",background:"var(--rds)",color:"var(--rd)",fontSize:13,fontWeight:600,marginBottom:12}}>Fermé actuellement</div>
+          <button className="hbt" style={{background:"var(--t2)"}} onClick={()=>setModeModal(true)}>🛒 Précommander</button>
+          <p style={{fontSize:11.5,color:"var(--yl)",marginTop:8,fontWeight:500}}>Votre commande sera disponible 15 min après la prochaine ouverture</p>
+        </>)}
         {(cfg.uberEatsUrl||cfg.deliverooUrl)&&<div style={{display:"flex",gap:10,justifyContent:"center",marginTop:14,flexWrap:"wrap"}}>
           {cfg.uberEatsUrl&&<a href={cfg.uberEatsUrl} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"9px 18px",borderRadius:"var(--rs)",background:"#06C167",color:"white",fontSize:12.5,fontWeight:600,textDecoration:"none"}}>Uber Eats</a>}
           {cfg.deliverooUrl&&<a href={cfg.deliverooUrl} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"9px 18px",borderRadius:"var(--rs)",background:"#00CCBC",color:"white",fontSize:12.5,fontWeight:600,textDecoration:"none"}}>Deliveroo</a>}
@@ -269,14 +272,6 @@ export default function App(){
       <button className="pbtn" style={{width:"100%",marginTop:20,padding:12}} onClick={()=>{setAuthModal(true);setAuthTab("register");setAuthErr("");}}>Créer un compte</button>
     </div></div>)}
 
-    {/* RESERVATION */}
-    {view==="user"&&page==="reservation"&&(<div className="pnl"><button className="bk" onClick={()=>setPage("menu")}>&#8592; Retour</button><div className="crd">
-      <h2 style={{fontFamily:"var(--fd)",fontSize:20,fontWeight:700,marginBottom:18}}>Réserver une table</h2>
-      <div className="fg"><label className="fl">Nom</label><input className="fi" placeholder="Votre nom" defaultValue={profile?.name||""}/></div>
-      <div className="fr"><div className="fg"><label className="fl">Téléphone</label><input className="fi" placeholder="06..." defaultValue={profile?.phone||""}/></div><div className="fg"><label className="fl">Personnes</label><input className="fi" type="number" min={1} max={20} defaultValue={2}/></div></div>
-      <div className="fr"><div className="fg"><label className="fl">Date</label><input className="fi" type="date"/></div><div className="fg"><label className="fl">Heure</label><select className="fi">{["","11:30","12:00","12:30","13:00","17:00","18:00","19:00","20:00","21:00"].map(t=><option key={t} value={t}>{t||"Choisir"}</option>)}</select></div></div>
-      <button className="pbtn" style={{width:"100%",marginTop:14,padding:12}} onClick={()=>{toast("OK","Reservation confirmee !");setPage("menu");}}>Confirmer</button>
-    </div></div>)}
 
     {/* ADMIN */}
     {view==="admin"&&isAdmin&&(<>
@@ -334,7 +329,10 @@ export default function App(){
         <div className="setcard"><div className="setlbl">Statut et Temps</div>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>{isOpen?"🟢":"🔴"}</span><span style={{fontSize:14,fontWeight:600}}>{isOpen?"Ouvert":"Fermé"}</span></div>
-            <label style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--t2)"}}><span>Forcer fermeture</span><label className="tsw"><input type="checkbox" checked={cfg.forceClose} onChange={e=>updateConfig({forceClose:e.target.checked})}/><span className="tsl"/></label></label>
+            <div style={{display:"flex",gap:8}}>
+              <label style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--t2)"}}><span>Forcer ouverture</span><label className="tsw"><input type="checkbox" checked={cfg.forceOpen||false} onChange={e=>updateConfig({forceOpen:e.target.checked,forceClose:false})}/><span className="tsl"/></label></label>
+              <label style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--t2)"}}><span>Forcer fermeture</span><label className="tsw"><input type="checkbox" checked={cfg.forceClose} onChange={e=>updateConfig({forceClose:e.target.checked,forceOpen:false})}/><span className="tsl"/></label></label>
+            </div>
           </div>
           <div className="fr">
             <div className="fg"><label className="fl">Temps attente (min)</label><input className="fi" type="number" min={0} max={120} value={cfg.waitTime} onChange={e=>updateConfig({waitTime:parseInt(e.target.value)||0})}/></div>
@@ -396,10 +394,11 @@ export default function App(){
       <h2 style={{fontFamily:"var(--fd)",fontSize:20,fontWeight:700,textAlign:"center",marginBottom:4}}>Comment souhaitez-vous commander ?</h2>
       {!isOpen&&<div style={{textAlign:"center",background:"var(--rds)",color:"var(--rd)",padding:"8px 14px",borderRadius:"var(--rs)",fontSize:12,fontWeight:600,margin:"10px 0"}}>Le restaurant est actuellement ferme</div>}
       <p style={{fontSize:12.5,color:"var(--t3)",textAlign:"center",marginBottom:20}}>Choisissez votre mode de commande</p>
-      <div className="moo">{MODES.map(m=>(<div key={m.id} className="mop" style={{opacity:isOpen?1:.5,pointerEvents:isOpen?"auto":"none"}} onClick={()=>{setOrderMode(m.id);setModeModal(false);if(m.id==="reserver")setPage("reservation");else toast(m.icon,"Mode: "+m.label);}}>
+      <div className="moo">{MODES.map(m=>(<div key={m.id} className="mop" onClick={()=>{setOrderMode(m.id);setModeModal(false);toast(m.icon,"Mode: "+m.label);}}>
         <div style={{width:42,height:42,borderRadius:11,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,background:m.color+"14"}}><span>{m.icon}</span></div>
         <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,marginBottom:1}}>{m.label}</div><div style={{fontSize:11.5,color:"var(--t2)"}}>{m.sub}</div></div>
       </div>))}</div>
+      {!isOpen&&<div style={{background:"var(--ys)",color:"var(--yl)",padding:"10px 14px",borderRadius:"var(--rs)",fontSize:12,fontWeight:600,marginTop:12,textAlign:"center"}}>Le restaurant est fermé. Votre commande sera prête 15 min après la prochaine ouverture.</div>}
     </div></div>}
 
     {/* CART DRAWER */}
@@ -445,7 +444,7 @@ export default function App(){
     </div></div>}
 
     {/* CHECKOUT */}
-    {checkoutOpen&&<CheckoutForm cart={cart} orderMode={orderMode} user={user} profile={profile} cartTotal={cartTotal} waitTime={cfg.waitTime} onClose={()=>setCheckoutOpen(false)} onSubmit={handleSubmit} onSignup={()=>{setCheckoutOpen(false);setAuthModal(true);setAuthTab("register");setAuthErr("");}}/>}
+    {checkoutOpen&&<CheckoutForm cart={cart} orderMode={orderMode} user={user} profile={profile} cartTotal={cartTotal} waitTime={cfg.waitTime} isOpenNow={isOpen} onClose={()=>setCheckoutOpen(false)} onSubmit={handleSubmit} onSignup={()=>{setCheckoutOpen(false);setAuthModal(true);setAuthTab("register");setAuthErr("");}}/>}
 
     {/* CONFIRMATION */}
     {confirmation&&<div className="ov" style={{zIndex:400}} onClick={()=>setConfirmation(null)}><div className="md" style={{maxWidth:400,textAlign:"center",padding:36}} onClick={e=>e.stopPropagation()}>
@@ -463,7 +462,6 @@ export default function App(){
     {/* MOBILE BOTTOM NAV */}
     {view==="user"&&<div className="bnav">
       <button className={"bnav-i "+(page==="menu"?"a":"")} onClick={()=>setPage("menu")}><span>{"🍽"}</span>Menu</button>
-      <button className={"bnav-i "+(page==="reservation"?"a":"")} onClick={()=>setPage("reservation")}><span>{"📅"}</span>Reserver</button>
       <button className="bnav-i" onClick={()=>setCartOpen(true)} style={{position:"relative"}}><span>{"🛒"}</span>Panier{cnt>0&&<span className="bnav-badge">{cnt}</span>}</button>
       <button className={"bnav-i "+(page==="loyalty"||page==="account"?"a":"")} onClick={()=>{setPage(user?"account":"loyalty");if(user)setAccTab("loyalty");}}><span>{"⭐"}</span>Fidelite</button>
       <button className={"bnav-i "+(page==="account"?"a":"")} onClick={()=>{if(user){setPage("account");setAccTab("orders");}else{setAuthModal(true);setAuthTab("login");setAuthErr("");}}}><span>{user?"👤":"🔑"}</span>{user?(profile?.name||"Compte").split(" ")[0].substring(0,6):"Compte"}</button>

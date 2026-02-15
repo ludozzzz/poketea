@@ -47,6 +47,7 @@ export function useConfig() {
 
   const checkOpen = () => {
     if (config.forceClose) return false;
+    if (config.forceOpen) return true;
     const days = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
     const now = new Date();
     const today = days[now.getDay()];
