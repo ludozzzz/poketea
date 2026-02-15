@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, getDocs, getDoc, onSnapshot, query, orderBy, where, setDoc, serverTimestamp } from "firebase/firestore";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -23,8 +23,11 @@ export const configDoc = doc(db, "config", "restaurant");
 export const adminsCol = collection(db, "admins");
 
 // Exports
+export const googleProvider = new GoogleAuthProvider();
+
 export {
   collection, doc, addDoc, updateDoc, deleteDoc, getDocs, getDoc,
   onSnapshot, query, orderBy, where, setDoc, serverTimestamp,
   signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged,
+  signInWithPopup,
 };

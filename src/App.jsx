@@ -128,7 +128,7 @@ function CheckoutForm({cart,orderMode,user,profile,cartTotal,waitTime,isOpenNow,
 }
 
 export default function App(){
-  const {user,profile,isAdmin,loading:authLoading,login,register,logout,addPoints,redeemPoints}=useAuth();
+  const {user,profile,isAdmin,loading:authLoading,login,loginWithGoogle,register,logout,addPoints,redeemPoints}=useAuth();
   const {products,loading:prodsLoading,updateProduct,addProduct,deleteProduct}=useProducts();
   const {orders,loading:ordsLoading,createOrder,updateStatus}=useOrders();
   const {config:cfg,loading:cfgLoading,updateConfig,checkOpen}=useConfig();
@@ -155,7 +155,7 @@ export default function App(){
   if(loading)return(<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",gap:12}}><div style={{fontSize:48}}>🍣</div><div style={{fontSize:14,color:"#999"}}>Chargement...</div></div>);
 
   const hasOptionGroups=p=>p.optionGroups&&p.optionGroups.length>0;
-  const handleAdd=p=>{if(!orderMode){setModeModal(true);return;}if(hasOptionGroups(p)){setDetailProduct(p);setSelOpts({});return;}const key=p.id;const e=cart.find(i=>i._key===key);if(e){setCart(cart.map(i=>i._key===key?{...i,qty:i.qty+1}:i));}else{setCart([...cart,{...p,_key:key,qty:1,selectedOpts:[],optSelections:{},unitPrice:p.price}]);}toast("OK",p.name+" ajoute");};
+  const handleAdd=p=>{if(!user){setAuthModal(true);setAuthTab("register");setAuthErr("");return;}if(!orderMode){setModeModal(true);return;}if(hasOptionGroups(p)){setDetailProduct(p);setSelOpts({});return;}const key=p.id;const e=cart.find(i=>i._key===key);if(e){setCart(cart.map(i=>i._key===key?{...i,qty:i.qty+1}:i));}else{setCart([...cart,{...p,_key:key,qty:1,selectedOpts:[],optSelections:{},unitPrice:p.price}]);}toast("OK",p.name+" ajoute");};
 
   const optsTotal=()=>{if(!detailProduct)return 0;let t=0;(detailProduct.optionGroups||[]).forEach(g=>{const sel=selOpts[g.name]||[];g.options.forEach(o=>{if(sel.includes(o.id))t+=o.price;});});return t;};
   const canAddToCart=()=>{if(!detailProduct)return false;for(const g of(detailProduct.optionGroups||[])){if(g.required){const sel=(selOpts[g.name]||[]).length;if(sel<g.min)return false;}}return true;};
@@ -168,6 +168,7 @@ export default function App(){
   const handleLog=async()=>{try{await login(af.email,af.pw);setAuthModal(false);setAf({name:"",email:"",phone:"",pw:"",birthday:""});setAuthErr("");toast("OK","Bon retour !");}catch{setAuthErr("Email ou mot de passe incorrect");}};
 
   const myOrders=orders.filter(o=>user&&o.customer?.email===profile?.email);
+  const handleReorder=(o)=>{if(!orderMode)setOrderMode("emporter");const nc=(o.items||[]).map(i=>{const pr=products.find(p=>p.id===i.id);return pr&&pr.available!==false?{...pr,qty:i.qty,_key:i.id+"_ro_"+Date.now(),unitPrice:i.unitPrice||pr.price,selectedOpts:i.selectedOpts||[],optSelections:{}}:null;}).filter(Boolean);if(!nc.length){toast("X","Produits indisponibles");return;}setCart(nc);toast("OK","Commande rechargée !");setPage("menu");setCartOpen(true);};
   const groups=()=>{let p=products.filter(x=>x.available!==false);if(activeCat==="popular")p=p.filter(x=>x.popular);else if(activeCat!=="all")p=p.filter(x=>x.category===activeCat);if(activeCat!=="all"&&activeCat!=="popular"){const c=CATEGORIES.find(x=>x.id===activeCat);return[{cat:c,products:p}];}if(activeCat==="popular")return[{cat:{id:"popular",name:"Populaires",emoji:"🔥"},products:p}];return CATEGORIES.map(c=>({cat:c,products:p.filter(x=>x.category===c.id)})).filter(g=>g.products.length>0);};
   const rev=orders.filter(o=>o.status!=="annulée").reduce((s,o)=>s+(o.total||0),0);
   const fOrds=orderFilter==="all"?orders:orders.filter(o=>o.status===orderFilter);
@@ -193,7 +194,10 @@ export default function App(){
         <div className="fg"><label className="fl">Email</label><input className="fi" type="email" value={af.email} onChange={e=>setAf({...af,email:e.target.value})} placeholder="votre@email.com"/></div>
         <div className="fg"><label className="fl">Mot de passe</label><input className="fi" type="password" value={af.pw} onChange={e=>setAf({...af,pw:e.target.value})} placeholder="********"/></div>
         <button className="pbtn" style={{width:"100%",padding:12}} onClick={handleLog}>Se connecter</button>
-        <div className="orsep">ou</div><button className="gbtn" style={{width:"100%",padding:10,textAlign:"center"}} onClick={()=>{setAuthTab("register");setAuthErr("");}}>Créer un compte gratuitement</button>
+        <div className="orsep">ou</div>
+        <button className="gbtn" style={{width:"100%",padding:10,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={async()=>{try{await loginWithGoogle();setAuthModal(false);toast("OK","Bienvenue !");}catch(e){setAuthErr(e.message);}}}><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continuer avec Google</button>
+        <div className="orsep">ou</div>
+        <button className="gbtn" style={{width:"100%",padding:10,textAlign:"center"}} onClick={()=>{setAuthTab("register");setAuthErr("");}}>Créer un compte</button>
       </>):(<>
         <div className="fg"><label className="fl">Nom complet *</label><input className="fi" value={af.name} onChange={e=>setAf({...af,name:e.target.value})} placeholder="Jean Dupont"/></div>
         <div className="fg"><label className="fl">Email *</label><input className="fi" type="email" value={af.email} onChange={e=>setAf({...af,email:e.target.value})} placeholder="votre@email.com"/></div>
@@ -201,6 +205,8 @@ export default function App(){
         <div className="fg"><label className="fl">Mot de passe *</label><input className="fi" type="password" value={af.pw} onChange={e=>setAf({...af,pw:e.target.value})} placeholder="Min. 6 caractères"/></div>
         <div className="fg"><label className="fl">Anniversaire</label><input className="fi" type="date" value={af.birthday} onChange={e=>setAf({...af,birthday:e.target.value})}/></div>
         <button className="pbtn" style={{width:"100%",padding:12}} onClick={handleReg}>Créer mon compte</button>
+        <div className="orsep">ou</div>
+        <button className="gbtn" style={{width:"100%",padding:10,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={async()=>{try{await loginWithGoogle();setAuthModal(false);toast("OK","Bienvenue !");}catch(e){setAuthErr(e.message);}}}><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continuer avec Google</button>
       </>)}
     </div></div>}
 
@@ -208,11 +214,11 @@ export default function App(){
     {view==="user"&&page==="menu"&&(<>
       <section className="hero"><div className="hbd">{wlc.badge}</div><h1 className="hti">{wlc.title.includes("&")?<>{wlc.title.split("&")[0]}<span>&amp;</span>{wlc.title.split("&")[1]}</>:wlc.title}</h1><p className="hds">{wlc.subtitle}</p>
         {isOpen?(<>
-          <button className="hbt" onClick={()=>setModeModal(true)}>🛒 Commander maintenant</button>
+          <button className="hbt" onClick={()=>{if(!user){setAuthModal(true);setAuthTab("register");setAuthErr("");return;}setModeModal(true);}}>🛒 Commander maintenant</button>
           {cfg.waitTime>0&&<p style={{fontSize:12,color:"var(--t2)",marginTop:10}}>Temps d attente : ~{cfg.waitTime} min</p>}
         </>):(<>
           <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"10px 20px",borderRadius:"var(--rs)",background:"var(--rds)",color:"var(--rd)",fontSize:13,fontWeight:600,marginBottom:12}}>Fermé actuellement</div>
-          <button className="hbt" style={{background:"var(--t2)"}} onClick={()=>setModeModal(true)}>🛒 Précommander</button>
+          <button className="hbt" style={{background:"var(--t2)"}} onClick={()=>{if(!user){setAuthModal(true);setAuthTab("register");setAuthErr("");return;}setModeModal(true);}}>🛒 Précommander</button>
           <p style={{fontSize:11.5,color:"var(--yl)",marginTop:8,fontWeight:500}}>Votre commande sera disponible 15 min après la prochaine ouverture</p>
         </>)}
         {(cfg.uberEatsUrl||cfg.deliverooUrl)&&<div style={{display:"flex",gap:10,justifyContent:"center",marginTop:14,flexWrap:"wrap"}}>
@@ -244,7 +250,7 @@ export default function App(){
         <button className={"atab "+(accTab==="info"?"a":"")} onClick={()=>setAccTab("info")}>Infos</button>
       </div>
       {accTab==="orders"&&(<div>{myOrders.length===0?(<div style={{textAlign:"center",padding:"36px 0",color:"var(--t3)"}}><div style={{fontSize:42,marginBottom:8}}>📦</div><div style={{fontSize:14,fontWeight:500}}>Aucune commande</div><button className="pbtn" style={{marginTop:16,padding:"10px 24px"}} onClick={()=>setPage("menu")}>Commander</button></div>
-      ):(myOrders.map(o=>(<div key={o.id} className="ocard"><div className="otop"><span className="oid">{o.orderNum||o.id.slice(0,8)}</span><span className={"sb "+stc(o.status)}>{o.status}</span></div><div className="odate">{fd(o.createdAt)} - {o.orderMode||""}</div><div className="oitms">{(o.items||[]).map(i=>i.qty+"x "+i.name).join(" - ")}</div><div className="obot"><span className="otot">{(o.total||0).toFixed(2)}E</span></div></div>)))}</div>)}
+      ):(myOrders.map(o=>(<div key={o.id} className="ocard"><div className="otop"><span className="oid">{o.orderNum||o.id.slice(0,8)}</span><span className={"sb "+stc(o.status)}>{o.status}</span></div><div className="odate">{fd(o.createdAt)} - {o.orderMode==="emporter"?"🥡 A emporter":o.orderMode==="surplace"?"🍽 Sur place":o.orderMode||""}</div><div className="oitms">{(o.items||[]).map(i=>i.qty+"x "+i.name).join(" — ")}</div><div className="obot"><span className="otot">{(o.total||0).toFixed(2)}€</span><button className="robtn" onClick={()=>handleReorder(o)}>🔄 Recommander</button></div></div>)))}</div>)}
       {accTab==="loyalty"&&(<div style={{textAlign:"center"}}><div style={{fontSize:42,marginBottom:8}}>⭐</div><div style={{fontSize:28,fontWeight:800,color:"var(--ac)",marginBottom:2}}>{profile.points||0} pts</div><div style={{fontSize:12,color:"var(--t3)",marginBottom:14}}>sur 100 pts pour une recompense</div>
         <div className="lbar"><div className="lfill" style={{width:Math.min(profile.points||0,100)+"%"}}/></div>
         <div style={{fontSize:11,color:"var(--t4)",marginTop:4,marginBottom:18}}>{(profile.points||0)>=100?"Vous pouvez utiliser vos points !":"Encore "+(100-(profile.points||0))+" points"}</div>
