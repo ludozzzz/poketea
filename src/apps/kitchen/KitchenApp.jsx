@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useOrders } from "./hooks/useOrders";
-import { useAuth } from "./hooks/useAuth";
+import { useOrders } from "../../shared/hooks/useOrders";
+import { useAuth } from "../../shared/hooks/useAuth";
 
 const STATUSES = ["nouvelle", "en préparation", "prête", "récupérée"];
 const STATUS_COLORS = {

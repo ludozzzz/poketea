@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "seed": "node src/seedProducts.js"
+    "seed": "node seed/seedProducts.js"
   },
   "dependencies": {
     "firebase": "^11.3.0",

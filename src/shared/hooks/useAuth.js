@@ -11,12 +11,10 @@ export function useAuth() {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
-        // Check admin
         try {
           const adminSnap = await getDoc(doc(db, "admins", u.uid));
           setIsAdmin(adminSnap.exists() && adminSnap.data().role === "admin");
         } catch { setIsAdmin(false); }
-        // Get profile
         try {
           const profSnap = await getDoc(doc(db, "users", u.uid));
           if (profSnap.exists()) setProfile({ id: u.uid, ...profSnap.data() });
@@ -58,7 +56,6 @@ export function useAuth() {
   const loginWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     const u = result.user;
-    // Check if profile exists, if not create one
     const profSnap = await getDoc(doc(db, "users", u.uid));
     if (!profSnap.exists()) {
       const prof = {

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "./hooks/useAuth";
-import { useProducts } from "./hooks/useProducts";
-import { useOrders } from "./hooks/useOrders";
-import { useConfig } from "./hooks/useConfig";
+import { useAuth } from "../../shared/hooks/useAuth";
+import { useProducts } from "../../shared/hooks/useProducts";
+import { useOrders } from "../../shared/hooks/useOrders";
+import { useConfig } from "../../shared/hooks/useConfig";
 
 const CATEGORIES = [
   {id:"entrees",name:"Entrées",emoji:"🥟"},{id:"poke-signature",name:"Poké Signature",emoji:"🍣"},

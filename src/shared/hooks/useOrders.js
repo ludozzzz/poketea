@@ -50,7 +50,18 @@ export function useOrders() {
     });
   };
 
-  return { orders, loading, createOrder, updateStatus };
+  const markPaid = async (id, paymentMethod, extras = {}) => {
+    await updateDoc(doc(db, "orders", id), {
+      paid: true,
+      paymentMethod,
+      status: "en préparation",
+      paidAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      ...extras,
+    });
+  };
+
+  return { orders, loading, createOrder, updateStatus, markPaid };
 }
 
 function playNotificationSound() {
